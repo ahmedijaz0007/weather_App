@@ -3,13 +3,13 @@ import '../models/weather.dart';
 abstract class WeatherEvent {}
 
 class FetchWeatherEvent extends WeatherEvent {
-  final String cityName;
-  FetchWeatherEvent({required this.cityName});
+  final List<String> cities;
+  FetchWeatherEvent({required this.cities});
 }
 
 class WeatherRefreshEvent extends WeatherEvent {
-  final String cityName;
-  WeatherRefreshEvent({required this.cityName});
+  final List<String> cities;
+  WeatherRefreshEvent({required this.cities});
 }
 
 class DeleteWeatherEvent extends WeatherEvent {

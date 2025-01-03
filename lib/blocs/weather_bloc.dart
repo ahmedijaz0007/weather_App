@@ -1,58 +1,72 @@
-import 'dart:async';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'weather_event.dart';
-import 'weather_state.dart';
-import '../repositories/weather_repository.dart';
+import 'package:bloc/bloc.dart';
+import 'package:weatherapp/blocs/weather_event.dart';
+import 'package:weatherapp/blocs/weather_state.dart';
+
 import '../models/weather.dart';
+import '../repositories/weather_repository.dart';
 
 class WeatherBloc extends Bloc<WeatherEvent, WeatherState> {
   final WeatherRepository _weatherRepository;
 
-  WeatherBloc(this._weatherRepository) : super(WeatherInitial());
+  WeatherBloc(this._weatherRepository) : super(WeatherInitial()) {
+    on<FetchWeatherEvent>(_onFetchWeather);
+    on<WeatherRefreshEvent>(_onRefreshWeather);
+    on<DeleteWeatherEvent>(_onDeleteWeather);
+    on<ReorderWeatherEvent>(_onReorderWeather);
+  }
 
-  Stream<WeatherState> mapEventToState(WeatherEvent event) async* {
-    if (event is FetchWeatherEvent) {
-      yield WeatherLoading();
-      try {
-        List<Weather> storedWeatherList = await _weatherRepository.loadWeatherListFromHive();
-        if (storedWeatherList.isNotEmpty) {
-          yield WeatherLoaded(weatherList: storedWeatherList);
-        } else {
-          List<Weather> weatherList = [];
-          weatherList.add(await _weatherRepository.fetchWeather(event.cityName));
-          await _weatherRepository.saveWeatherListToHive(weatherList);
-          yield WeatherLoaded(weatherList: weatherList);
-        }
-      } catch (e) {
-        yield WeatherError(message: e.toString());
-      }
-    } else if (event is WeatherRefreshEvent) {
-      yield WeatherLoading();
-      try {
-        List<Weather> weatherList = await _weatherRepository.fetchWeatherData();
+  Future<void> _onFetchWeather(FetchWeatherEvent event, Emitter<WeatherState> emit) async {
+    emit(WeatherLoading());
+    try {
+      print("fetch weather data from hive");
+      List<Weather> storedWeatherList = await _weatherRepository.loadWeatherListFromHive();
+      if (storedWeatherList.isNotEmpty) {
+        emit(WeatherLoaded(weatherList: storedWeatherList));
+      } else {
+        print("fetch weather data from api");
+        List<Weather> weatherList = await _weatherRepository.fetchWeatherData(event.cities);
         await _weatherRepository.saveWeatherListToHive(weatherList);
-        yield WeatherLoaded(weatherList: weatherList);
-      } catch (e) {
-        yield WeatherError(message: e.toString());
+        emit(WeatherLoaded(weatherList: weatherList));
       }
-    } else if (event is DeleteWeatherEvent) {
-      yield WeatherLoading();
-      try {
-        await _weatherRepository.removeWeatherFromHive(event.cityName);
-        List<Weather> updatedWeatherList = await _weatherRepository.loadWeatherListFromHive();
-        yield WeatherLoaded(weatherList: updatedWeatherList);
-      } catch (e) {
-        yield WeatherError(message: e.toString());
-      }
-    } else if (event is ReorderWeatherEvent) {
-      yield WeatherLoading();
-      try {
-        List<Weather> updatedWeatherList = event.weatherList;
-        await _weatherRepository.saveWeatherListToHive(updatedWeatherList);
-        yield WeatherLoaded(weatherList: updatedWeatherList);
-      } catch (e) {
-        yield WeatherError(message: e.toString());
-      }
+    } catch (e) {
+      print("error in fetch weather data");
+      throw Exception(e);
+      emit(WeatherError(message: e.toString()));
+    }
+  }
+
+  Future<void> _onRefreshWeather(WeatherRefreshEvent event, Emitter<WeatherState> emit) async {
+    print("refresh weather data");
+    emit(WeatherLoading());
+    try {
+      List<Weather> weatherList = await _weatherRepository.fetchWeatherData(event.cities);
+      await _weatherRepository.saveWeatherListToHive(weatherList);
+      emit(WeatherLoaded(weatherList: weatherList));
+    } catch (e) {
+      emit(WeatherError(message: e.toString()));
+    }
+  }
+
+  Future<void> _onDeleteWeather(DeleteWeatherEvent event, Emitter<WeatherState> emit) async {
+    print("delete weather data");
+    emit(WeatherLoading());
+    try {
+      await _weatherRepository.removeWeatherFromHive(event.cityName);
+      List<Weather> updatedWeatherList = await _weatherRepository.loadWeatherListFromHive();
+      emit(WeatherLoaded(weatherList: updatedWeatherList));
+    } catch (e) {
+      emit(WeatherError(message: e.toString()));
+    }
+  }
+
+  Future<void> _onReorderWeather(ReorderWeatherEvent event, Emitter<WeatherState> emit) async {
+    print("reoder weather data");
+    emit(WeatherLoading());
+    try {
+      await _weatherRepository.saveWeatherListToHive(event.weatherList);
+      emit(WeatherLoaded(weatherList: event.weatherList));
+    } catch (e) {
+      emit(WeatherError(message: e.toString()));
     }
   }
 }

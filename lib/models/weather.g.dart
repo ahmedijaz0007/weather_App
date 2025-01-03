@@ -8,7 +8,7 @@ part of 'weather.dart';
 
 class WeatherAdapter extends TypeAdapter<Weather> {
   @override
-  final int typeId = 0;
+  final int typeId = 99;
 
   @override
   Weather read(BinaryReader reader) {
@@ -17,9 +17,9 @@ class WeatherAdapter extends TypeAdapter<Weather> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return Weather(
-      cityName: fields[0] as String,
-      temperature: fields[1] as double,
-      description: fields[2] as String,
+      cityName: fields[91] as String,
+      temperature: fields[92] as double,
+      description: fields[93] as String,
     );
   }
 
@@ -27,11 +27,11 @@ class WeatherAdapter extends TypeAdapter<Weather> {
   void write(BinaryWriter writer, Weather obj) {
     writer
       ..writeByte(3)
-      ..writeByte(0)
+      ..writeByte(91)
       ..write(obj.cityName)
-      ..writeByte(1)
+      ..writeByte(92)
       ..write(obj.temperature)
-      ..writeByte(2)
+      ..writeByte(93)
       ..write(obj.description);
   }
 
