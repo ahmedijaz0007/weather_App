@@ -15,6 +15,8 @@ class WeatherBloc extends Bloc<WeatherEvent, WeatherState> {
     on<ReorderWeatherEvent>(_onReorderWeather);
   }
 
+
+
   Future<void> _onFetchWeather(FetchWeatherEvent event, Emitter<WeatherState> emit) async {
     emit(WeatherLoading());
     try {
@@ -41,6 +43,7 @@ class WeatherBloc extends Bloc<WeatherEvent, WeatherState> {
     try {
       List<Weather> weatherList = await _weatherRepository.fetchWeatherData(event.cities);
       await _weatherRepository.saveWeatherListToHive(weatherList);
+      print("number of weathers to show ${weatherList.length}");
       emit(WeatherLoaded(weatherList: weatherList));
     } catch (e) {
       emit(WeatherError(message: e.toString()));
@@ -63,6 +66,7 @@ class WeatherBloc extends Bloc<WeatherEvent, WeatherState> {
     print("reoder weather data");
     emit(WeatherLoading());
     try {
+
       await _weatherRepository.saveWeatherListToHive(event.weatherList);
       emit(WeatherLoaded(weatherList: event.weatherList));
     } catch (e) {
