@@ -7,11 +7,11 @@ class WeatherRepository {
   final String apiKey = '39ef401fe38da63712ea322b3c7ba6be';
 final List<Weather> weatherList = [];
 
-  Future<Box<List<Weather>>> _openWeatherBox() async {
+  Future<Box<List>> _openWeatherBox() async {
     if (Hive.isBoxOpen('weatherBox')) {
-      return Hive.box<List<Weather>>('weatherBox');
+      return Hive.box<List>('weatherBox');
     } else {
-      return await Hive.openBox<List<Weather>>('weatherBox');
+      return await Hive.openBox<List>('weatherBox');
     }
   }
 
@@ -46,15 +46,15 @@ final List<Weather> weatherList = [];
 
 
   Future<void> saveWeatherListToHive(List<Weather> weatherList) async {
+
     final box = await _openWeatherBox();
     await box.put('weatherList', weatherList);
   }
 
   Future<List<Weather>> loadWeatherListFromHive() async {
-    print("i was here");
+
     final box = await _openWeatherBox();
-    print("i was here");
-    var storedData = box.get('weatherList') ?? [];
+    var storedData = box.get('weatherList')?.cast<Weather>();
 
     print('Stored data: $storedData');
     print('Type: ${storedData.runtimeType}');
